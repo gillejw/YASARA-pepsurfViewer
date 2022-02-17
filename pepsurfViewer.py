@@ -25,6 +25,7 @@ import yasara
 import re
 
 from container import *
+from collections import defaultdict
 
 if (yasara.storage==None):
     yasara.storage=container()
@@ -58,7 +59,7 @@ class pepsurf():
             yasara.LoadPDB(self.input)
 #           yasara.ZoomAll()
             self.extract_pepsurf_data(self.input)
-            self.extract_pepsurf_clusters(self.input, self.job_parms['pepsurf_cluster_count'])
+            self.job_parms['cluster_paths'] = self.extract_pepsurf_clusters(self.input, self.job_parms['pepsurf_cluster_count'])
             yasara.NameObj(1, self.job_parms['pepsurf_pdb_id'].upper())
 
     def extract_pepsurf_data(self, input):
@@ -91,7 +92,6 @@ class pepsurf():
                     cluster=[]
                     cluster_paths[c]=cluster
                     c+=1
-                    print(c-1)
                     print_state = True
                 elif "!!---------" in line:
                     print_state = False
@@ -106,7 +106,7 @@ class pepsurf():
                             cluster.append(item)
         return cluster_paths
 
-    def color_pdf_default(self):
+    def color_pdb_default(self):
         print("Setting Default Colors...")
         yasara.HideAll()
         yasara.ColorBG(self.background_color)
@@ -114,10 +114,57 @@ class pepsurf():
         return
 
     def display_pdb_chains(self, pepsurf_chains):
-        self.color_pdf_default()
+        self.color_pdb_default()
         for inx, chain in enumerate(pepsurf_chains):
             print(chain)
             yasara.ColorMol(chain + " and !HetGroup", self.color_chain[inx])
+        return
+
+    def display_pepsurf_clusters(self, pepsurf_chains, cluster_paths):
+        s = self.select_chain_members(cluster_paths)
+        self.color_clusters(pepsurf_chains, s)
+        return
+
+    def select_chain_members(self, cluster_paths):
+        selection = {}
+        for cluster in cluster_paths:
+            cluster_select = defaultdict(list)
+#            print(cluster_paths[cluster])
+            for item in cluster_paths[cluster]:
+                c = self.id_pdb_chain(item)
+                a = self.id_aa_residue(item)
+                p = self.id_aa_pos(item)
+                cluster_select[c].append(a + " " + p)
+            selection[cluster] = cluster_select
+#        print(selection)
+        return selection
+
+    def id_pdb_chain(self, item):
+        return item.split(':')[-1]
+
+    def id_aa_residue(self, item):
+        return item.split(':')[0][0:3]
+
+    def id_aa_pos(self, item):
+        return item.split(':')[0][3:]
+
+    def color_clusters(self, chains, selection):
+        print("Coloring...")
+        for idx, item in enumerate(selection):
+#            print(selection) # Gives all clusters
+            print(item) #Gives Cluster Number
+#            print(selection[item]) # Gives each cluster individually
+            for j, k in selection[item].items():
+                print(j) # Gives Mol Chain
+                print(k) # Gives list of residues
+                for i in k:
+                    print(i)
+                    yasara.SelectRes(i + " and Mol " + j, mode='add')
+            yasara.ColorRes('selected', self.cluster_color[item-1])
+            yasara.DuplicateRes('selected')
+            yasara.ColorObj(item+1, self.cluster_color[item-1])
+            yasara.NameObj(item+1,"Cluster " + str(item))
+            yasara.UnselectAll()
         return
 
 try:
@@ -142,6 +189,7 @@ try:
             p = pepsurf(parms = yasara.storage.objects)
             print(p.job_parms)
             p.display_pdb_chains(p.job_parms["pepsurf_chains"])
+            p.display_pepsurf_clusters(p.job_parms['pepsurf_chains'], p.job_parms['cluster_paths'])
         else:
             print("Error: Need to load a PepSurfPDB...")
 except:
