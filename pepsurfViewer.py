@@ -58,6 +58,7 @@ class pepsurf():
             yasara.LoadPDB(self.input)
 #           yasara.ZoomAll()
             self.extract_pepsurf_data(self.input)
+            self.extract_pepsurf_clusters(self.input, self.job_parms['pepsurf_cluster_count'])
             yasara.NameObj(1, self.job_parms['pepsurf_pdb_id'].upper())
 
     def extract_pepsurf_data(self, input):
@@ -79,8 +80,31 @@ class pepsurf():
                     if "pepsurf_cluster_count" in line:
                         self.job_parms['pepsurf_cluster_count'] = line[-2:-1]
 
-    def extract_pepsurf_clusters(self):
-        pass
+    def extract_pepsurf_clusters(self, input, num_clust):
+        c = 1
+        cluster_paths = {}
+        print_state = False
+        with open(self.input, mode='r') as f:
+            print("Opened file...")
+            for line in f:
+                if "!" in line and "#name=select_cluster" in line:
+                    cluster=[]
+                    cluster_paths[c]=cluster
+                    c+=1
+                    print(c-1)
+                    print_state = True
+                elif "!!---------" in line:
+                    print_state = False
+                elif "====== END OF PEPSURF PiPE BLOCK ======" in line:
+                    break
+                elif print_state:
+                    line_add = line.replace("select", "").replace("ed or ", "").replace("!  ", "").rstrip().split(", ")
+                    for item in line_add:
+                        if "!" in item:
+                            pass
+                        else:
+                            cluster.append(item)
+        return cluster_paths
 
     def color_pdf_default(self):
         print("Setting Default Colors...")
@@ -103,13 +127,12 @@ try:
             # Clear storage for new PDB Loading...
             yasara.Clear()
             yasara.storage.objects = {}
-        else:
-            print("Load Storage...")
-            p = pepsurf(yasara.selection[0].filename[0])
+        print("Load Storage...")
+        p = pepsurf(yasara.selection[0].filename[0])
 #            yasara.storage.objects.append(p)
-            yasara.storage.objects.update(p.job_parms)
-            print(p.job_parms)
-            print("Loading Complete...")
+        yasara.storage.objects.update(p.job_parms)
+        print(p.job_parms)
+        print("Loading Complete...")
 
     if yasara.request=="ViewPepSurfPDB":
         print("ViewPepSurfPDB...")
