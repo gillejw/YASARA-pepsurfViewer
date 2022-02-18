@@ -30,7 +30,7 @@ from collections import defaultdict
 if (yasara.storage==None):
     yasara.storage=container()
     yasara.storage.objects = {}
-    print("Creating Storage...")
+#    print("Creating Storage...")
 else:
     print("Storage Container Exists...")
 
@@ -50,11 +50,11 @@ class pepsurf():
         self.job_parms = {}
 
         if yasara.storage.objects:
-            print("Object Exists...")
+#            print("Object Exists...")
             self.input = None
             self.job_parms.update(parms)
         else:
-            print("Creating new PepSurfPDB Object...")
+#            print("Creating new PepSurfPDB Object...")
             yasara.Clear()
             yasara.LoadPDB(self.input)
 #           yasara.ZoomAll()
@@ -86,7 +86,7 @@ class pepsurf():
         cluster_paths = {}
         print_state = False
         with open(self.input, mode='r') as f:
-            print("Opened file...")
+#            print("Opened file...")
             for line in f:
                 if "!" in line and "#name=select_cluster" in line:
                     cluster=[]
@@ -107,7 +107,7 @@ class pepsurf():
         return cluster_paths
 
     def color_pdb_default(self):
-        print("Setting Default Colors...")
+#        print("Setting Default Colors...")
         yasara.HideAll()
         yasara.ColorBG(self.background_color)
         yasara.ColorAll(self.color_carbon)
@@ -149,45 +149,51 @@ class pepsurf():
         return item.split(':')[0][3:]
 
     def color_clusters(self, chains, selection):
-        print("Coloring...")
+#        print("Coloring...")
+        yasara.DuplicateObj(1) # Produces Obj 2 - Unlabeled
+        yasara.NameObj(1, "All Clusters")
         for idx, item in enumerate(selection):
 #            print(selection) # Gives all clusters
-            print(item) #Gives Cluster Number
+#            print(item) #Gives Cluster Number
 #            print(selection[item]) # Gives each cluster individually
+            yasara.DuplicateObj(2) # Unlabeled for each cluster
+            yasara.NameObj(item+2,"Cluster " + str(item))
             for j, k in selection[item].items():
-                print(j) # Gives Mol Chain
-                print(k) # Gives list of residues
+#                print(j) # Gives Mol Chain
+#                print(k) # Gives list of residues
                 for i in k:
-                    print(i)
+#                    print(i)
                     yasara.SelectRes(i + " and Mol " + j, mode='add')
-            yasara.ColorRes('selected', self.cluster_color[item-1])
-            yasara.DuplicateRes('selected')
-            yasara.ColorObj(item+1, self.cluster_color[item-1])
-            yasara.NameObj(item+1,"Cluster " + str(item))
+            yasara.ColorRes('selected and Obj 1', self.cluster_color[item-1])
+            yasara.ColorRes('selected and Obj ' + str(item+2), self.cluster_color[item-1])
+#            yasara.DuplicateRes('selected')
+#            yasara.ColorRes('selected', self.cluster_color[item-1])
             yasara.UnselectAll()
+        yasara.SwitchObj('All', 'off')
+        yasara.SwitchObj(1, 'on')
         return
 
 try:
     if yasara.request=="LoadPepSurfPDB":
         if yasara.storage.objects:
-            print("Storage Exists...")
+#            print("Storage Exists...")
             # Clear storage for new PDB Loading...
             yasara.Clear()
             yasara.storage.objects = {}
-        print("Load Storage...")
+#        print("Load Storage...")
         p = pepsurf(yasara.selection[0].filename[0])
 #            yasara.storage.objects.append(p)
         yasara.storage.objects.update(p.job_parms)
-        print(p.job_parms)
-        print("Loading Complete...")
+#        print(p.job_parms)
+#        print("Loading Complete...")
 
     if yasara.request=="ViewPepSurfPDB":
-        print("ViewPepSurfPDB...")
+#        print("ViewPepSurfPDB...")
         if yasara.storage.objects:
-            print("Loading PepSurfPDB Parameters...")
+#            print("Loading PepSurfPDB Parameters...")
 #            p = pepsurf(yasara.storage.objects[0])
             p = pepsurf(parms = yasara.storage.objects)
-            print(p.job_parms)
+#            print(p.job_parms)
             p.display_pdb_chains(p.job_parms["pepsurf_chains"])
             p.display_pepsurf_clusters(p.job_parms['pepsurf_chains'], p.job_parms['cluster_paths'])
         else:
