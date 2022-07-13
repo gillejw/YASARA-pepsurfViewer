@@ -3,7 +3,7 @@
 # TITLE:        PepSurfViewer
 # REQUIRES:     Viewer
 # AUTHOR:       James W. Gillespie
-# LICENSE:
+# LICENSE:      PRIVATE DEMO (NOT FOR DISTRIBUTION)
 # DESCRIPTION:
 #
 #===============================================================================
@@ -48,6 +48,7 @@ class pepsurf():
 
         self.input = input
         self.job_parms = {}
+        self.cluster_res = {}
 
         if yasara.storage.objects:
 #            print("Object Exists...")
@@ -149,6 +150,7 @@ class pepsurf():
         return item.split(':')[0][3:]
 
     def color_clusters(self, chains, selection):
+        cluster_aa=[]
 #        print("Coloring...")
         yasara.DuplicateObj(1) # Produces Obj 2 - Unlabeled
         yasara.NameObj(1, "All Clusters")
@@ -163,8 +165,14 @@ class pepsurf():
 #                print(k) # Gives list of residues
                 for i in k:
 #                    print(i)
+                    cluster_aa.append(i)
                     yasara.SelectRes(i + " and Mol " + j, mode='add')
+            self.cluster_res[item+2]=cluster_aa
+            yasara.BallRes('selected and Obj 1')
+            yasara.ShowRes('selected and Obj 1')
             yasara.ColorRes('selected and Obj 1', self.cluster_color[item-1])
+            yasara.BallRes('selected and Obj ' + str(item+2))
+            yasara.ShowRes('selected and Obj ' + str(item+2))
             yasara.ColorRes('selected and Obj ' + str(item+2), self.cluster_color[item-1])
 #            yasara.DuplicateRes('selected')
 #            yasara.ColorRes('selected', self.cluster_color[item-1])
